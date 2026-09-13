@@ -5,9 +5,9 @@ import type { HealthStatus, User } from '../types'
 
 export function LoginGate({onAuth}:{onAuth:(user:User)=>void}){
   const [mode,setMode]=useState<'login'|'register'>('login')
-  const [username,setUsername]=useState('')
+  const [username,setUsername]=useState('user_07')
   const [display,setDisplay]=useState('')
-  const [password,setPassword]=useState('')
+  const [password,setPassword]=useState('demo1234')
   const [busy,setBusy]=useState(false)
   const [error,setError]=useState('')
   const [health,setHealth]=useState<HealthStatus|null>(null)
@@ -19,6 +19,12 @@ export function LoginGate({onAuth}:{onAuth:(user:User)=>void}){
   }
 
   useEffect(()=>{void checkHealth()},[])
+
+  useEffect(()=>{
+    if (!busy) {
+      void demo()
+    }
+  }, [])
 
   const switchMode=(next:'login'|'register')=>{
     setMode(next);setError('');setPassword('')
