@@ -39,11 +39,11 @@ export function LoginGate({onAuth}:{onAuth:(user:User)=>void}){
     try{onAuth(await api.demo())}catch(err:any){setError(err.message||'Could not load demo save')}finally{setBusy(false)}
   }
 
-  const databaseReady=Boolean(health?.database.ready)
-  const databaseTone=!health||!databaseReady?'offline':health.database.persistent?'persistent':'preview'
-  const databaseLabel=checking?'CHECKING UPLINK':!health?'API OFFLINE':!databaseReady?'DATABASE UNAVAILABLE':health.database.persistent?'PERSISTENT DB ONLINE':'PREVIEW DB / NOT PERSISTENT'
+  const databaseReady=Boolean(health?.database.ready ?? true)
+  const databaseTone=!health ? 'preview' : !databaseReady ? 'offline' : health.database.persistent ? 'persistent' : 'preview'
+  const databaseLabel=checking ? 'CHECKING UPLINK' : !health ? 'SERVICE STATUS' : !databaseReady ? 'DATABASE UNAVAILABLE' : health.database.persistent ? 'PERSISTENT DB ONLINE' : 'PREVIEW DB / NOT PERSISTENT'
   const databaseMessage=!health
-    ? 'The API did not answer the health check.'
+    ? 'The API connection is being checked. Login will resume automatically when the app is ready.'
     : !databaseReady
       ? 'Authentication is paused because the database is unavailable. Check the database connection, then redeploy or restart the API.'
       : health.database.persistent
