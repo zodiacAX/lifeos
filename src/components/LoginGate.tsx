@@ -39,13 +39,14 @@ export function LoginGate({onAuth}:{onAuth:(user:User)=>void}){
     try{onAuth(await api.demo())}catch(err:any){setError(err.message||'Could not load demo save')}finally{setBusy(false)}
   }
 
-  const databaseReady=Boolean(health?.database.ready ?? true)
-  const databaseTone=!health ? 'preview' : !databaseReady ? 'offline' : health.database.persistent ? 'persistent' : 'preview'
-  const databaseLabel=checking ? 'CHECKING UPLINK' : !health ? 'SERVICE STATUS' : !databaseReady ? 'DATABASE UNAVAILABLE' : health.database.persistent ? 'PERSISTENT DB ONLINE' : 'PREVIEW DB / NOT PERSISTENT'
-  const databaseMessage=!health
+  const usePreviewLogin = !health || (health.database.mode === 'ephemeral-preview' || health.database.mode === 'sqlite-local')
+  const databaseReady = Boolean(health?.database.ready ?? true)
+  const databaseTone = !health || !databaseReady ? 'offline' : health.database.persistent ? 'persistent' : 'preview'
+  const databaseLabel = checking ? 'CHECKING UPLINK' : !health ? 'SERVICE STATUS' : !databaseReady ? 'DATABASE UNAVAILABLE' : health.database.persistent ? 'PERSISTENT DB ONLINE' : 'PREVIEW DB / NOT PERSISTENT'
+  const databaseMessage = !health
     ? 'The API connection is being checked. Login will resume automatically when the app is ready.'
     : !databaseReady
-      ? 'Authentication is paused because the database is unavailable. Check the database connection, then redeploy or restart the API.'
+      ? 'Cloud service is unavailable. If this is Vercel, connect Postgres and redeploy.'
       : health.database.persistent
         ? 'User profiles survive redeploys and cold starts.'
         : 'Preview database only. Connect Postgres before production.'
@@ -78,10 +79,10 @@ export function LoginGate({onAuth}:{onAuth:(user:User)=>void}){
         <label>ACCESS KEY<input type="password" value={password} onChange={e=>setPassword(e.target.value)} minLength={6} required placeholder="••••••••" autoComplete={mode==='login'?'current-password':'new-password'}/></label>
         {mode==='register'&&<p className="register-note">A starter quest set and character profile will be created automatically.</p>}
         {error&&<div className="auth-error" role="alert">{error}</div>}
-        <button className="primary-auth" disabled={busy || !databaseReady}>{busy?'SYNCING...':mode==='login'?'ENTER LIFE//OS':'CREATE NEW IDENTITY'} <ArrowRight size={17}/></button>
+        <button className="primary-auth" disabled={busy || (!databaseReady && !usePreviewLogin)}>{busy?'SYNCING...':mode==='login'?'ENTER LIFE//OS':'CREATE NEW IDENTITY'} <ArrowRight size={17}/></button>
       </form>
 
-      <button type="button" className="demo-auth" onClick={demo} disabled={busy || !databaseReady}><Sparkles size={15}/> Load demo save - level 18</button>
+      <button type="button" className="demo-auth" onClick={demo} disabled={busy || (!databaseReady && !usePreviewLogin)}><Sparkles size={15}/> Load demo save - level 18</button>
       <button type="button" className="switch-auth" onClick={()=>switchMode(mode==='login'?'register':'login')}>{mode==='login'?'First time here? Create a new user':'Already have a save? Sign in instead'}</button>
       <div className="auth-fineprint"><span>DATABASE PERSISTENCE</span><span>SERVER-VERIFIED XP</span><span>HTTP-ONLY SESSION</span></div>
     </section>
