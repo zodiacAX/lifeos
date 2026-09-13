@@ -31,8 +31,9 @@ app.add_middleware(
 )
 
 
-@app.on_event("startup")
-def startup():
+def init_db():
+    if getattr(app.state, "db_ready", False):
+        return
     app.state.db_ready = False
     app.state.db_error = None
     try:
@@ -50,6 +51,18 @@ def startup():
         log.exception("Database initialization failed")
 
 
+@app.on_event("startup")
+def startup():
+    init_db()
+
+
+@app.middleware("http")
+async def ensure_db_middleware(request: Request, call_next):
+    if not getattr(app.state, "db_ready", False):
+        init_db()
+    return await call_next(request)
+
+
 @app.exception_handler(SQLAlchemyError)
 async def database_exception_handler(_: Request, exc: SQLAlchemyError):
     log.exception("Database request failed", exc_info=exc)
@@ -63,6 +76,8 @@ async def database_exception_handler(_: Request, exc: SQLAlchemyError):
 
 @app.get("/api/health")
 def health():
+    if not getattr(app.state, "db_ready", False):
+        init_db()
     return {
         "status": "online",
         "system": "LIFE//OS",
@@ -97,3 +112,5 @@ if not settings.is_vercel:
             if full_path and target.is_file():
                 return FileResponse(target)
             return FileResponse(DIST / "index.html")
+
+init_db()
