@@ -78,12 +78,16 @@ async def database_exception_handler(_: Request, exc: SQLAlchemyError):
 def health():
     if not getattr(app.state, "db_ready", False):
         init_db()
+    database_ready = bool(getattr(app.state, "db_ready", False))
     return {
-        "status": "online",
+        # A running function is not enough to authenticate a user.  Report a
+        # degraded service whenever the database failed to initialise, so the
+        # frontend does not invite a user to submit a login that cannot work.
+        "status": "online" if database_ready else "degraded",
         "system": "LIFE//OS",
         "version": "2.1.0",
         "database": {
-            "ready": bool(getattr(app.state, "db_ready", False)),
+            "ready": database_ready,
             "persistent": settings.persistent_database_configured,
             "mode": "postgres" if settings.persistent_database_configured else ("ephemeral-preview" if settings.is_vercel else "sqlite-local"),
         },

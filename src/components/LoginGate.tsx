@@ -39,8 +39,16 @@ export function LoginGate({onAuth}:{onAuth:(user:User)=>void}){
     try{onAuth(await api.demo())}catch(err:any){setError(err.message||'Could not load demo save')}finally{setBusy(false)}
   }
 
-  const databaseTone=!health?'offline':health.database.persistent?'persistent':'preview'
-  const databaseLabel=checking?'CHECKING UPLINK':!health?'API OFFLINE':health.database.persistent?'PERSISTENT DB ONLINE':'PREVIEW DB / NOT PERSISTENT'
+  const databaseReady=Boolean(health?.database.ready)
+  const databaseTone=!health||!databaseReady?'offline':health.database.persistent?'persistent':'preview'
+  const databaseLabel=checking?'CHECKING UPLINK':!health?'API OFFLINE':!databaseReady?'DATABASE UNAVAILABLE':health.database.persistent?'PERSISTENT DB ONLINE':'PREVIEW DB / NOT PERSISTENT'
+  const databaseMessage=!health
+    ? 'The API did not answer the health check.'
+    : !databaseReady
+      ? 'Authentication is paused because the database is unavailable. Check the database connection, then redeploy or restart the API.'
+      : health.database.persistent
+        ? 'User profiles survive redeploys and cold starts.'
+        : 'Preview database only. Connect Postgres before production.'
 
   return <main className="auth-screen">
     <div className="auth-bg-grid"/><div className="auth-glow"/>
@@ -60,7 +68,7 @@ export function LoginGate({onAuth}:{onAuth:(user:User)=>void}){
       </div>
 
       <div className={`cloud-status ${databaseTone}`}>
-        <Database size={14}/><div><b>{databaseLabel}</b><span>{health?.database.persistent?'User profiles survive redeploys and cold starts.':health?'Connect Postgres on Vercel before production.':'The API did not answer the health check.'}</span></div>
+        <Database size={14}/><div><b>{databaseLabel}</b><span>{databaseMessage}</span></div>
         <button type="button" onClick={checkHealth} aria-label="Retry server health check"><RefreshCw size={13}/></button>
       </div>
 
@@ -70,10 +78,10 @@ export function LoginGate({onAuth}:{onAuth:(user:User)=>void}){
         <label>ACCESS KEY<input type="password" value={password} onChange={e=>setPassword(e.target.value)} minLength={6} required placeholder="••••••••" autoComplete={mode==='login'?'current-password':'new-password'}/></label>
         {mode==='register'&&<p className="register-note">A starter quest set and character profile will be created automatically.</p>}
         {error&&<div className="auth-error" role="alert">{error}</div>}
-        <button className="primary-auth" disabled={busy || !health}>{busy?'SYNCING...':mode==='login'?'ENTER LIFE//OS':'CREATE NEW IDENTITY'} <ArrowRight size={17}/></button>
+        <button className="primary-auth" disabled={busy || !databaseReady}>{busy?'SYNCING...':mode==='login'?'ENTER LIFE//OS':'CREATE NEW IDENTITY'} <ArrowRight size={17}/></button>
       </form>
 
-      <button type="button" className="demo-auth" onClick={demo} disabled={busy || !health}><Sparkles size={15}/> Load demo save — level 18</button>
+      <button type="button" className="demo-auth" onClick={demo} disabled={busy || !databaseReady}><Sparkles size={15}/> Load demo save - level 18</button>
       <button type="button" className="switch-auth" onClick={()=>switchMode(mode==='login'?'register':'login')}>{mode==='login'?'First time here? Create a new user':'Already have a save? Sign in instead'}</button>
       <div className="auth-fineprint"><span>DATABASE PERSISTENCE</span><span>SERVER-VERIFIED XP</span><span>HTTP-ONLY SESSION</span></div>
     </section>
