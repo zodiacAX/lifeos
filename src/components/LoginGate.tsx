@@ -79,10 +79,10 @@ export function LoginGate({onAuth}:{onAuth:(user:User)=>void}){
         <label>ACCESS KEY<input type="password" value={password} onChange={e=>setPassword(e.target.value)} minLength={6} required placeholder="••••••••" autoComplete={mode==='login'?'current-password':'new-password'}/></label>
         {mode==='register'&&<p className="register-note">A starter quest set and character profile will be created automatically.</p>}
         {error&&<div className="auth-error" role="alert">{error}</div>}
-        <button className="primary-auth" disabled={busy || (!databaseReady && !usePreviewLogin)}>{busy?'SYNCING...':mode==='login'?'ENTER LIFE//OS':'CREATE NEW IDENTITY'} <ArrowRight size={17}/></button>
+        <button className="primary-auth" disabled={busy}>{busy?'SYNCING...':mode==='login'?'ENTER LIFE//OS':'CREATE NEW IDENTITY'} <ArrowRight size={17}/></button>
       </form>
 
-      <button type="button" className="demo-auth" onClick={demo} disabled={busy || (!databaseReady && !usePreviewLogin)}><Sparkles size={15}/> Load demo save - level 18</button>
+      <button type="button" className="demo-auth" onClick={demo} disabled={busy}><Sparkles size={15}/> Load demo save - level 18</button>
       <button type="button" className="switch-auth" onClick={()=>switchMode(mode==='login'?'register':'login')}>{mode==='login'?'First time here? Create a new user':'Already have a save? Sign in instead'}</button>
       <div className="auth-fineprint"><span>DATABASE PERSISTENCE</span><span>SERVER-VERIFIED XP</span><span>HTTP-ONLY SESSION</span></div>
     </section>
